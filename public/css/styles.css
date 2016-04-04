@@ -1,0 +1,11 @@
+body {
+  padding-top: 70px;
+}
+
+.user-form {
+  max-width: 500px;
+  padding: 30px;
+  border: 1px solid #e9e9e9;
+  margin: 0 auto;
+  margin-top: 50px;
+}
