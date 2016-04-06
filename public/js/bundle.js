@@ -51,13 +51,6 @@
 
 	var Routes = __webpack_require__(159);
 
-	// import React from 'react';
-	// import ReactDOM from 'react-dom';
-
-	// Notice that we've organized all of our routes into a separate file.
-	// import Router from './router';
-
-	// Now we can attach the router to the 'root' element like this:
 	ReactDOM.render(Routes, document.getElementById('app'));
 
 /***/ },
@@ -19678,12 +19671,14 @@
 	var MainLayout = __webpack_require__(217);
 
 	// Pages
-	var Home = __webpack_require__(218);
+	var Home = __webpack_require__(219);
 
 	// User Pages
-	var Signin = __webpack_require__(219);
-	var Signup = __webpack_require__(220);
-	var NewPassword = __webpack_require__(221);
+	var Signin = __webpack_require__(220);
+	var Signup = __webpack_require__(221);
+	var NewPassword = __webpack_require__(222);
+
+	var Profile = __webpack_require__(223);
 
 	module.exports = React.createElement(
 	  Router,
@@ -19694,11 +19689,12 @@
 	    React.createElement(Route, { path: '/', component: Home }),
 	    React.createElement(
 	      Route,
-	      { path: 'user' },
+	      { path: 'auth' },
 	      React.createElement(Route, { path: 'signin', component: Signin }),
 	      React.createElement(Route, { path: 'signup', component: Signup }),
 	      React.createElement(Route, { path: 'new-password', component: NewPassword })
-	    )
+	    ),
+	    React.createElement(Route, { path: '/profile', component: Profile })
 	  )
 	);
 
@@ -24763,9 +24759,43 @@
 	var React = __webpack_require__(1);
 	var ReactRouter = __webpack_require__(160);
 	var Link = ReactRouter.Link;
+	var browserHistory = ReactRouter.browserHistory;
+
+	var firebaseAuth = __webpack_require__(218);
 
 	var MainLayout = React.createClass({
 	  displayName: 'MainLayout',
+
+	  getInitialState: function getInitialState() {
+	    return {
+	      isLoggedInUser: false
+	    };
+	  },
+
+	  componentWillMount: function componentWillMount() {
+	    // TODO: pass props to child component to check is login or logout state
+
+	    firebaseAuth.checkLoginState(function (authData) {
+	      if (authData) {
+	        console.log("User " + authData.uid + " is logged in with " + authData.provider);
+	        this.setState({
+	          isLoggedInUser: true
+	        });
+	      } else {
+	        console.log("User is log out");
+	        this.setState({
+	          isLoggedInUser: false
+	        });
+	      }
+	    }.bind(this));
+	  },
+
+	  handleSignoutClick: function handleSignoutClick() {
+	    firebaseAuth.logout(function (authData) {
+	      console.log('Logout');
+	      browserHistory.push('/');
+	    });
+	  },
 
 	  render: function render() {
 	    return React.createElement(
@@ -24801,12 +24831,20 @@
 	          React.createElement(
 	            'ul',
 	            { className: 'nav navbar-nav navbar-right' },
-	            React.createElement(
+	            this.state.isLoggedInUser ? React.createElement(
+	              'li',
+	              null,
+	              React.createElement(
+	                'a',
+	                { onClick: this.handleSignoutClick },
+	                'Logout'
+	              )
+	            ) : React.createElement(
 	              'li',
 	              null,
 	              React.createElement(
 	                Link,
-	                { to: '/user/signin' },
+	                { to: '/auth/signin' },
 	                'Login'
 	              )
 	            )
@@ -24826,6 +24864,36 @@
 
 /***/ },
 /* 218 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	var firebaseAuth = function () {
+	  var ref = new Firebase("https://clapperboard.firebaseio.com/");
+
+	  function checkLoginState(callback) {
+	    ref.onAuth(callback);
+	  }
+
+	  function logout(callback) {
+	    ref.unauth(callback);
+	  }
+
+	  function login(data, callback) {
+	    ref.authWithPassword(data, callback);
+	  }
+
+	  return {
+	    checkLoginState: checkLoginState,
+	    logout: logout,
+	    login: login
+	  };
+	}();
+
+	module.exports = firebaseAuth;
+
+/***/ },
+/* 219 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -24851,25 +24919,89 @@
 	module.exports = Home;
 
 /***/ },
-/* 219 */
+/* 220 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var React = __webpack_require__(1);
 	var ReactRouter = __webpack_require__(160);
+	var browserHistory = ReactRouter.browserHistory;
 	var Link = ReactRouter.Link;
+
+	var firebaseAuth = __webpack_require__(218);
 
 	var Signin = React.createClass({
 	  displayName: 'Signin',
+
+	  getInitialState: function getInitialState() {
+	    return {
+	      email: '',
+	      password: '',
+	      isRemember: false,
+	      error: false,
+	      msg: ''
+	    };
+	  },
+
+	  handleEmailInput: function handleEmailInput(event) {
+	    this.setState({ email: event.target.value });
+	  },
+
+	  handlePasswordInput: function handlePasswordInput(event) {
+	    this.setState({ password: event.target.value });
+	  },
+
+	  handleRemeberCheck: function handleRemeberCheck(event) {
+	    console.log(event);
+	  },
+
+	  handleSubmit: function handleSubmit(event) {
+
+	    event.preventDefault();
+
+	    var email = this.state.email;
+	    var password = this.state.password;
+
+	    if (!email || !password) {
+	      return;
+	    }
+
+	    firebaseAuth.login({
+	      email: email,
+	      password: password
+	    }, function (error, authData) {
+	      if (error) {
+	        this.setState({
+	          error: true,
+	          msg: 'Login Failed'
+	        });
+	        console.log("Login Failed!", error);
+	      } else {
+	        console.log("Authenticated successfully with payload:", authData);
+	        browserHistory.push('/profile');
+	      }
+	    });
+
+	    this.setState({ email: '', password: '' });
+	  },
 
 	  render: function render() {
 	    return React.createElement(
 	      'div',
 	      { className: 'user-form' },
 	      React.createElement(
+	        'div',
+	        { className: 'auth-msg' },
+	        React.createElement(
+	          'p',
+	          null,
+	          this.state.msg
+	        )
+	      ),
+	      React.createElement(
 	        'form',
-	        { className: 'signin-form' },
+	        { className: 'signin-form', onSubmit: this.handleSubmit },
 	        React.createElement(
 	          'h2',
 	          { className: 'form-heading' },
@@ -24893,7 +25025,15 @@
 	            null,
 	            'Email'
 	          ),
-	          React.createElement('input', { type: 'email', className: 'form-control', id: 'inputEmail', placeholder: 'Email' })
+	          React.createElement('input', {
+	            type: 'email',
+	            className: 'form-control',
+	            id: 'inputEmail',
+	            placeholder: 'Email',
+	            ref: 'email',
+	            value: this.state.email,
+	            onChange: this.handleEmailInput
+	          })
 	        ),
 	        React.createElement(
 	          'div',
@@ -24903,7 +25043,15 @@
 	            null,
 	            'Password'
 	          ),
-	          React.createElement('input', { type: 'password', className: 'form-control', id: 'inputPassword', placeholder: 'Email' })
+	          React.createElement('input', {
+	            type: 'password',
+	            className: 'form-control',
+	            id: 'inputPassword',
+	            placeholder: 'Password',
+	            ref: 'password',
+	            value: this.state.password,
+	            onChange: this.handlePasswordInput
+	          })
 	        ),
 	        React.createElement(
 	          'div',
@@ -24911,7 +25059,14 @@
 	          React.createElement(
 	            'label',
 	            null,
-	            React.createElement('input', { type: 'checkbox', value: 'remember-me' }),
+	            React.createElement('input', {
+	              type: 'checkbox',
+	              className: 'form-control',
+	              id: 'checkRemeber',
+	              ref: 'remeber',
+	              value: this.state.isRemember,
+	              onChange: this.handleRemeberCheck
+	            }),
 	            ' Remember me'
 	          )
 	        ),
@@ -24928,16 +25083,16 @@
 	      ),
 	      React.createElement(
 	        'div',
-	        { className: 'user-center' },
+	        { className: 'auth-center' },
 	        React.createElement(
 	          Link,
-	          { to: '/user/signup' },
+	          { to: '/auth/signup' },
 	          ' Sign Up '
 	        ),
 	        ' |',
 	        React.createElement(
 	          Link,
-	          { to: '/user/new-password' },
+	          { to: '/auth/new-password' },
 	          ' Forgot Password ? '
 	        )
 	      )
@@ -24948,7 +25103,7 @@
 	module.exports = Signin;
 
 /***/ },
-/* 220 */
+/* 221 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25045,16 +25200,16 @@
 	      ),
 	      React.createElement(
 	        'div',
-	        { className: 'user-center' },
+	        { className: 'auth-center' },
 	        React.createElement(
 	          Link,
-	          { to: '/user/signin' },
+	          { to: '/auth/signin' },
 	          ' Sign In '
 	        ),
 	        ' |',
 	        React.createElement(
 	          Link,
-	          { to: '/user/new-password' },
+	          { to: '/auth/new-password' },
 	          ' Forgot Password ? '
 	        )
 	      )
@@ -25065,7 +25220,7 @@
 	module.exports = Signup;
 
 /***/ },
-/* 221 */
+/* 222 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25107,16 +25262,16 @@
 	      ),
 	      React.createElement(
 	        'div',
-	        { className: 'user-center' },
+	        { className: 'auth-center' },
 	        React.createElement(
 	          Link,
-	          { to: '/user/signin' },
+	          { to: '/auth/signin' },
 	          ' Sign In '
 	        ),
 	        ' |',
 	        React.createElement(
 	          Link,
-	          { to: '/user/signup' },
+	          { to: '/auth/signup' },
 	          ' Sign Up '
 	        )
 	      )
@@ -25125,6 +25280,42 @@
 	});
 
 	module.exports = NewPassword;
+
+/***/ },
+/* 223 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var React = __webpack_require__(1);
+	var ReactRouter = __webpack_require__(160);
+	var browserHistory = ReactRouter.browserHistory;
+
+	var firebaseAuth = __webpack_require__(218);
+
+	var Profile = React.createClass({
+	  displayName: 'Profile',
+
+	  getInitialState: function getInitialState() {
+	    return {
+	      account: ''
+	    };
+	  },
+
+	  render: function render() {
+	    return React.createElement(
+	      'div',
+	      { className: 'home-page' },
+	      React.createElement(
+	        'h1',
+	        null,
+	        'Welcome Back'
+	      )
+	    );
+	  }
+	});
+
+	module.exports = Profile;
 
 /***/ }
 /******/ ]);

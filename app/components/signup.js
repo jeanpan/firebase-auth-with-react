@@ -34,9 +34,9 @@ var Signup = React.createClass({
           <button className="btn btn-lg btn-success btn-block" type="submit">Sign Up</button>
           <p> Agree with the terms of service </p>
         </form>
-        <div className="user-center">
-          <Link to="/user/signin"> Sign In </Link> |
-          <Link to="/user/new-password"> Forgot Password ? </Link>
+        <div className="auth-center">
+          <Link to="/auth/signin"> Sign In </Link> |
+          <Link to="/auth/new-password"> Forgot Password ? </Link>
         </div>
       </div>
     );

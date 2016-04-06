@@ -14,9 +14,9 @@ var NewPassword = React.createClass({
           </div>
           <button className="btn btn-lg btn-warning btn-block" type="submit">Reset Password</button>
         </form>
-        <div className="user-center">
-          <Link to="/user/signin"> Sign In </Link> |
-          <Link to="/user/signup"> Sign Up </Link>
+        <div className="auth-center">
+          <Link to="/auth/signin"> Sign In </Link> |
+          <Link to="/auth/signup"> Sign Up </Link>
         </div>
       </div>
     );
