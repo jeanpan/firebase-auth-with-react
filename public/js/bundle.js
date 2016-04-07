@@ -19675,10 +19675,10 @@
 
 	// User Pages
 	var Signin = __webpack_require__(220);
-	var Signup = __webpack_require__(221);
-	var NewPassword = __webpack_require__(222);
+	var Signup = __webpack_require__(222);
+	var NewPassword = __webpack_require__(223);
 
-	var Profile = __webpack_require__(223);
+	var Profile = __webpack_require__(224);
 
 	module.exports = React.createElement(
 	  Router,
@@ -24930,6 +24930,7 @@
 	var Link = ReactRouter.Link;
 
 	var firebaseAuth = __webpack_require__(218);
+	var firebaseUser = __webpack_require__(221);
 
 	var Signin = React.createClass({
 	  displayName: 'Signin',
@@ -24979,6 +24980,7 @@
 	        console.log("Login Failed!", error);
 	      } else {
 	        console.log("Authenticated successfully with payload:", authData);
+	        // firebaseUser.createUserData(authData);
 	        browserHistory.push('/profile');
 	      }
 	    });
@@ -25104,6 +25106,67 @@
 
 /***/ },
 /* 221 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	var firebaseUser = function () {
+	  var ref = new Firebase("https://clapperboard.firebaseio.com/users/");
+
+	  /*
+	  function checkExistingUser(authData) {
+	    ref.child(authData.uid).once('value', function(snapshot) {
+	      var isExist = (snapshot.val() !== null);
+	    });
+	  }
+	  */
+
+	  function createUserData(authData) {
+	    ref.child(authData.uid).once('value', function (snapshot) {
+	      var isExist = snapshot.val() !== null;
+	      // new user, create user data
+	      if (!isExist) {
+	        ref.child(authData.uid).set({
+	          provider: authData.provider,
+	          name: _getUserName(authData)
+	        });
+	      } else {
+	        console.log("User Existed");
+	      }
+	    });
+	  }
+
+	  function getUserData(authData, callback) {
+	    ref.child(authData.uid).once('value', callback);
+	    /*
+	    ref.child(authData.uid).once('value', function(snapshot) {
+	      return snapshot.child("name").val();
+	      // console.log(snapshot.child("name").val());
+	    });
+	    */
+	  }
+
+	  function _getUserName(authData) {
+	    switch (authData.provider) {
+	      case 'password':
+	        return authData.password.email.replace(/@.*/, '');
+	      case 'twitter':
+	        return authData.twitter.displayName;
+	      case 'facebook':
+	        return authData.facebook.displayName;
+	    }
+	  }
+
+	  return {
+	    createUserData: createUserData,
+	    getUserData: getUserData
+	  };
+	}();
+
+	module.exports = firebaseUser;
+
+/***/ },
+/* 222 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25220,7 +25283,7 @@
 	module.exports = Signup;
 
 /***/ },
-/* 222 */
+/* 223 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25282,7 +25345,7 @@
 	module.exports = NewPassword;
 
 /***/ },
-/* 223 */
+/* 224 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25292,14 +25355,32 @@
 	var browserHistory = ReactRouter.browserHistory;
 
 	var firebaseAuth = __webpack_require__(218);
+	var firebaseUser = __webpack_require__(221);
 
 	var Profile = React.createClass({
 	  displayName: 'Profile',
 
 	  getInitialState: function getInitialState() {
 	    return {
-	      account: ''
+	      username: ''
 	    };
+	  },
+
+	  componentWillMount: function componentWillMount() {
+	    console.log("profile");
+	    firebaseAuth.checkLoginState(function (authData) {
+	      if (authData) {
+
+	        firebaseUser.getUserData(authData, function (snapshot) {
+	          this.setState({
+	            username: snapshot.child("name").val()
+	          });
+	        }.bind(this));
+	      } else {
+	        // Not logged in user, redirect to login page.
+	        browserHistory.push('/auth/signin');
+	      }
+	    }.bind(this));
 	  },
 
 	  render: function render() {
@@ -25309,7 +25390,9 @@
 	      React.createElement(
 	        'h1',
 	        null,
-	        'Welcome Back'
+	        'Welcome Back, ',
+	        this.state.username,
+	        ' !'
 	      )
 	    );
 	  }

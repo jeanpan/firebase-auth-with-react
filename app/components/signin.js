@@ -4,6 +4,7 @@ var browserHistory = ReactRouter.browserHistory;
 var Link = ReactRouter.Link;
 
 var firebaseAuth = require('../utils/firebaseAuth');
+var firebaseUser = require('../utils/firebaseUser');
 
 var Signin = React.createClass({
   getInitialState: function() {
@@ -51,6 +52,7 @@ var Signin = React.createClass({
         console.log("Login Failed!", error);
       } else {
         console.log("Authenticated successfully with payload:", authData);
+        // firebaseUser.createUserData(authData);
         browserHistory.push('/profile');
       }
     });
