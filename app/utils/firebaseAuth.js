@@ -18,7 +18,7 @@ var firebaseAuth = (function() {
   return {
     checkLoginState: checkLoginState,
     logout: logout,
-    login: login
+    login: login,
   }
 
 })();
