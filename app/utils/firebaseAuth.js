@@ -15,10 +15,15 @@ var firebaseAuth = (function() {
     ref.authWithPassword(data, callback);
   }
 
+  function register(data, callback) {
+    ref.createUser(data, callback);
+  }
+
   return {
     checkLoginState: checkLoginState,
     logout: logout,
     login: login,
+    register: register
   }
 
 })();

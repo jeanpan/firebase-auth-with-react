@@ -24883,10 +24883,15 @@
 	    ref.authWithPassword(data, callback);
 	  }
 
+	  function register(data, callback) {
+	    ref.createUser(data, callback);
+	  }
+
 	  return {
 	    checkLoginState: checkLoginState,
 	    logout: logout,
-	    login: login
+	    login: login,
+	    register: register
 	  };
 	}();
 
@@ -24980,7 +24985,7 @@
 	        console.log("Login Failed!", error);
 	      } else {
 	        console.log("Authenticated successfully with payload:", authData);
-	        // firebaseUser.createUserData(authData);
+	        firebaseUser.createUserData(authData);
 	        browserHistory.push('/profile');
 	      }
 	    });
@@ -25173,18 +25178,106 @@
 
 	var React = __webpack_require__(1);
 	var ReactRouter = __webpack_require__(160);
+	var browserHistory = ReactRouter.browserHistory;
 	var Link = ReactRouter.Link;
+
+	var firebaseAuth = __webpack_require__(218);
+	var firebaseUser = __webpack_require__(221);
 
 	var Signup = React.createClass({
 	  displayName: 'Signup',
+
+	  getInitialState: function getInitialState() {
+	    return {
+	      email: '',
+	      password: '',
+	      confirmPassword: '',
+	      msg: ''
+	    };
+	  },
+
+	  handleEmailInput: function handleEmailInput(event) {
+	    this.setState({ email: event.target.value });
+	  },
+
+	  handlePasswordInput: function handlePasswordInput(event) {
+	    this.setState({ password: event.target.value });
+	  },
+
+	  handleConfirmPasswordInput: function handleConfirmPasswordInput(event) {
+	    this.setState({ confirmPassword: event.target.value });
+	  },
+
+	  handleSubmit: function handleSubmit(event) {
+
+	    event.preventDefault();
+
+	    var email = this.state.email;
+	    var password = this.state.password;
+	    var confirmPassword = this.state.confirmPassword;
+
+	    if (!email || !password || !confirmPassword) {
+	      return;
+	    }
+
+	    if (password !== confirmPassword) {
+	      return;
+	    }
+
+	    firebaseAuth.register({
+	      email: email,
+	      password: password
+	    }, function (error, authData) {
+	      if (error) {
+	        switch (error.code) {
+	          case "EMAIL_TAKEN":
+	            this.setState({
+	              msg: "The new user account cannot be created because the email is already in use."
+	            });
+	            console.log("The new user account cannot be created because the email is already in use.");
+	            break;
+	          case "INVALID_EMAIL":
+	            this.setState({
+	              msg: "The specified email is not a valid email."
+	            });
+	            console.log("The specified email is not a valid email.");
+	            break;
+	          default:
+	            this.setState({
+	              msg: "Error creating user:"
+	            });
+	            console.log("Error creating user:", error);
+	        }
+	      } else {
+	        console.log("Successfully created user account with uid:", authData);
+	        browserHistory.push('/auth/signin');
+	        // firebaseUser.createUserData(authData);
+	      }
+	    }.bind(this));
+
+	    this.setState({
+	      email: '',
+	      password: '',
+	      confirmPassword: ''
+	    });
+	  },
 
 	  render: function render() {
 	    return React.createElement(
 	      'div',
 	      { className: 'user-form' },
 	      React.createElement(
+	        'div',
+	        { className: 'auth-msg' },
+	        React.createElement(
+	          'p',
+	          null,
+	          this.state.msg
+	        )
+	      ),
+	      React.createElement(
 	        'form',
-	        { className: 'signup-form' },
+	        { className: 'signup-form', onSubmit: this.handleSubmit },
 	        React.createElement(
 	          'h2',
 	          { className: 'form-heading' },
@@ -25206,19 +25299,16 @@
 	          React.createElement(
 	            'label',
 	            null,
-	            'Username'
-	          ),
-	          React.createElement('input', { type: 'text', className: 'form-control', id: 'inputEmail', placeholder: 'Your Name' })
-	        ),
-	        React.createElement(
-	          'div',
-	          { className: 'form-group' },
-	          React.createElement(
-	            'label',
-	            null,
 	            'Email'
 	          ),
-	          React.createElement('input', { type: 'email', className: 'form-control', id: 'inputEmail', placeholder: 'hello@example.com' })
+	          React.createElement('input', {
+	            type: 'email',
+	            className: 'form-control',
+	            id: 'inputEmail',
+	            ref: 'email',
+	            value: this.state.email,
+	            onChange: this.handleEmailInput
+	          })
 	        ),
 	        React.createElement(
 	          'div',
@@ -25228,7 +25318,14 @@
 	            null,
 	            'Password'
 	          ),
-	          React.createElement('input', { type: 'password', className: 'form-control', id: 'inputPassword' })
+	          React.createElement('input', {
+	            type: 'password',
+	            className: 'form-control',
+	            id: 'inputPassword',
+	            ref: 'password',
+	            value: this.state.password,
+	            onChange: this.handlePasswordInput
+	          })
 	        ),
 	        React.createElement(
 	          'div',
@@ -25238,17 +25335,14 @@
 	            null,
 	            'Confirm Password'
 	          ),
-	          React.createElement('input', { type: 'password', className: 'form-control', id: 'inputPassword' })
-	        ),
-	        React.createElement(
-	          'div',
-	          { className: 'checkbox' },
-	          React.createElement(
-	            'label',
-	            null,
-	            React.createElement('input', { type: 'checkbox', value: 'remember-me' }),
-	            ' Remember me'
-	          )
+	          React.createElement('input', {
+	            type: 'password',
+	            className: 'form-control',
+	            id: 'inputPassword',
+	            ref: 'confirmPassword',
+	            value: this.state.confirmPassword,
+	            onChange: this.handleConfirmPasswordInput
+	          })
 	        ),
 	        React.createElement(
 	          'button',
