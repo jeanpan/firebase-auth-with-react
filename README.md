@@ -7,6 +7,6 @@ npm install
 # Start the Server
 gulp
 
-# If you want to edit the react code, this rebuilds
+# Rebuilds React Code ( Bundling )
 gulp watch
 ```
